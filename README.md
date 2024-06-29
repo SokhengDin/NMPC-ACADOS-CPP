@@ -48,9 +48,9 @@ Let $x_k \in \mathbb{R}^{n_x}$ be the state vector and $u_k \in \mathbb{R}^{n_u}
 
 The cost function is defined as:
 
-$$
+```math
 J = \sum_{k=0}^{N-1} \left\| \begin{bmatrix} x_k - x^{ref}_k \\ u_k - u^{ref}_k \\ u_k - u_{k-1} \end{bmatrix} \right\|^2_W + \left\| x_N - x^{ref}_N \right\|^2_{W_e}
-$$
+```
 
 where:
 - $N$ is the prediction horizon length
@@ -71,14 +71,14 @@ The MPC problem is solved using the Sequential Quadratic Programming (SQP) metho
 
 At each iteration $i$, the SQP method linearizes the nonlinear system dynamics and cost function around the current estimate of the optimal solution $(x^{(i)}, u^{(i)})$. The resulting QP subproblem is:
 
-$$
+```math
 \begin{align}
 \min_{d_x, d_u} \quad & \frac{1}{2} \begin{bmatrix} d_x \\ d_u \end{bmatrix}^T H^{(i)} \begin{bmatrix} d_x \\ d_u \end{bmatrix} + \nabla J(x^{(i)}, u^{(i)})^T \begin{bmatrix} d_x \\ d_u \end{bmatrix} \\
 \text{s.t.} \quad & x_{k+1} = f(x_k, u_k) + \nabla f(x_k^{(i)}, u_k^{(i)}) \begin{bmatrix} d_{x,k} \\ d_{u,k} \end{bmatrix} \\
 & x_0 = \bar{x}_0 \\
 & x_k \in \mathcal{X}, \quad u_k \in \mathcal{U}
 \end{align}
-$$
+```
 
 where:
 - $d_x$ and $d_u$ are the search directions for the states and controls, respectively
@@ -91,12 +91,12 @@ where:
 
 The QP subproblem is solved to obtain the search directions $(d_x^*, d_u^*)$, which are used to update the current estimate of the optimal solution:
 
-$$
+```math
 \begin{align}
 x^{(i+1)} &= x^{(i)} + \alpha_x d_x^* \\
 u^{(i+1)} &= u^{(i)} + \alpha_u d_u^*
 \end{align}
-$$
+```
 
 where $\alpha_x$ and $\alpha_u$ are the step sizes determined by a line search procedure to ensure sufficient decrease in the cost function.
 
