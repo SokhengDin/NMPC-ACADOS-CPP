@@ -56,9 +56,7 @@ where:
 - $N$ is the prediction horizon length
 - $W$ is the weight matrix for the stage cost, defined as a block-diagonal matrix:
   
-  ```math
-  W = \begin{bmatrix} Q & 0 & 0 \\ 0 & R & 0 \\ 0 & 0 & R_{rate} \end{bmatrix}
-  ```
+  $ W = \begin{bmatrix} Q & 0 & 0 \\ 0 & R & 0 \\ 0 & 0 & R_{rate} \end{bmatrix}$
   
   - $Q \in \mathbb{R}^{n_x \times n_x}$ is the weight matrix for the state deviation
   - $R \in \mathbb{R}^{n_u \times n_u}$ is the weight matrix for the control input deviation
