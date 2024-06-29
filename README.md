@@ -56,7 +56,7 @@ where:
 - $N$ is the prediction horizon length
 - $W$ is the weight matrix for the stage cost, defined as a block-diagonal matrix:
   
-  $W = \begin{bmatrix} Q & 0 & 0 \\ 0 & R & 0 \\ 0 & 0 & R_{rate} \end{bmatrix}$
+  ```math W = \begin{bmatrix} Q & 0 & 0 \\ 0 & R & 0 \\ 0 & 0 & R_{rate} \end{bmatrix}$ ```
   
   - $Q \in \mathbb{R}^{n_x \times n_x}$ is the weight matrix for the state deviation
   - $R \in \mathbb{R}^{n_u \times n_u}$ is the weight matrix for the control input deviation
@@ -103,3 +103,26 @@ where $\alpha_x$ and $\alpha_u$ are the step sizes determined by a line search p
 The SQP iterations continue until a convergence criterion is met, such as the norm of the search directions falling below a specified tolerance or reaching a maximum number of iterations.
 
 The ACADOS solver used in this implementation employs a real-time iteration (RTI) variant of the SQP method, which allows for efficient and fast solution of the MPC problem in real-time applications.
+
+## Runge-Kutta Method for State Approximation
+
+```math
+\begin{align}
+k_1 &= f(x_k, u_k) \\
+k_2 &= f(x_k + \frac{h}{2} k_1, u_k) \\
+k_3 &= f(x_k + \frac{h}{2} k_2, u_k) \\
+k_4 &= f(x_k + h k_3, u_k) \\
+x_{k+1} &= x_k + \frac{h}{6} (k_1 + 2k_2 + 2k_3 + k_4)
+\end{align}
+```
+
+The Runge-Kutta method is used to approximate the state evolution of the system given the current state and control input. In this implementation, the fourth-order Runge-Kutta method (RK4) is employed.
+
+Given the current state $x_k$ and control input $u_k$, the next state $x_{k+1}$ is approximated using the above steps, where:
+- $f(x_k, u_k)$ represents the system dynamics function
+- $h$ is the time step size
+- $k_1$, $k_2$, $k_3$, and $k_4$ are the intermediate stages of the RK4 method
+
+The RK4 method provides a higher-order approximation of the state evolution compared to simpler methods like Euler's method. It takes into account the slope of the system dynamics at multiple points within the time step, resulting in a more accurate approximation.
+
+By using the Runge-Kutta method, the MPC algorithm can predict the future states of the system more accurately, leading to improved control performance.
