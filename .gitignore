@@ -1,0 +1,21 @@
+# Ignore build artifacts and CMake cache
+build/
+CMakeCache.txt
+cmake_install.cmake
+CMakeFiles/
+Makefile
+Makefile2
+cmake_check_build_system.cmake
+cmake_install.cmake
+progress.marks
+
+# Ignore compiled binaries and shared libraries
+*.o
+*.so
+
+# Ignore generated files
+plots/
+
+# Ignore temporary files and directories
+CMakeTmp/
+CMakeTmp/
