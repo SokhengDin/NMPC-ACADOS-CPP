@@ -14,8 +14,8 @@ To build the project, follow these steps:
 
 1. **Clone the repository**:
     ```sh
-    git clone <repository_url>
-    cd <repository_name>
+    git clone https://github.com/SokhengDin/NMPC-ACADOS-CPP.git
+    cd NMPC-ACADOS-CPP
     ```
 
 2. **Create a build directory and navigate to it**:
