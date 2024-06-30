@@ -179,20 +179,25 @@ int main() {
     try {
         // Initial state and target
         std::vector<double> x_init = {0.0, 0.0, 0.0};
-        std::vector<double> x_target = {2.0, 1.5, M_PI/2};
+        std::vector<double> x_target = {3.0, 1.5, M_PI/2};
 
         // Simulation parameters
         double dt = 0.05;
-        double distance_threshold = 0.05;
+        double distance_threshold = 0.03;
         int num_trajectory_points = 100;
 
         // Constraints
-        std::vector<double> lbx = {-2.0, -2.0, -M_PI};
-        std::vector<double> ubx = {2.0, 2.0, M_PI};
-        std::vector<double> lbu = {-0.5, -0.5};
-        std::vector<double> ubu = {0.5, 0.5};
+        std::vector<double> lbx = {-10.0, -10.0, -M_PI};
+        std::vector<double> ubx = {10.0, 10.0, M_PI};
+        std::vector<double> lbu = {-1.5, -1.5};
+        std::vector<double> ubu = {1.5, 1.5};
 
-        AcadosSolver solver(lbx, ubx, lbu, ubu);
+        // Cost matrices
+        std::vector<double> Q_diag = {25.0, 10.0, 1.0};
+        std::vector<double> R_diag = {0.1, 0.01};
+        std::vector<double> R_rate_diag = {1.0, 2.0};
+
+        AcadosSolver solver(lbx, ubx, lbu, ubu, Q_diag, R_diag, R_rate_diag);
 
         // Generate cubic trajectory and reference controls
         auto x_ref_traj = generate_cubic_trajectory(x_init, x_target, num_trajectory_points);

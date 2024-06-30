@@ -4,7 +4,10 @@
 #include <iostream>
 
 AcadosSolver::AcadosSolver(const std::vector<double>& lbx, const std::vector<double>& ubx,
-                           const std::vector<double>& lbu, const std::vector<double>& ubu) 
+                           const std::vector<double>& lbu, const std::vector<double>& ubu,
+                           const std::vector<double>& Q_diag,
+                           const std::vector<double>& R_diag,
+                           const std::vector<double>& R_rate_diag) 
 {
     capsule = differential_drive_acados_create_capsule();
     if (capsule == nullptr) {
@@ -34,8 +37,30 @@ AcadosSolver::AcadosSolver(const std::vector<double>& lbx, const std::vector<dou
         ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, i, "lbu", const_cast<double*>(lbu.data()));
         ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, i, "ubu", const_cast<double*>(ubu.data()));
     }
-}
 
+    // Set cost matrices
+    std::vector<double> W(DIFFERENTIAL_DRIVE_NY * DIFFERENTIAL_DRIVE_NY, 0.0);
+    for (int i = 0; i < DIFFERENTIAL_DRIVE_NX; ++i) {
+        W[i * DIFFERENTIAL_DRIVE_NY + i] = Q_diag[i];
+    }
+    for (int i = 0; i < DIFFERENTIAL_DRIVE_NU; ++i) {
+        W[(DIFFERENTIAL_DRIVE_NX + i) * DIFFERENTIAL_DRIVE_NY + DIFFERENTIAL_DRIVE_NX + i] = R_diag[i];
+    }
+    for (int i = 0; i < DIFFERENTIAL_DRIVE_NU; ++i) {
+        W[(DIFFERENTIAL_DRIVE_NX + DIFFERENTIAL_DRIVE_NU + i) * DIFFERENTIAL_DRIVE_NY + DIFFERENTIAL_DRIVE_NX + DIFFERENTIAL_DRIVE_NU + i] = R_rate_diag[i];
+    }
+
+    for (int i = 0; i < DIFFERENTIAL_DRIVE_N; ++i) {
+        ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, i, "W", W.data());
+    }
+
+    // Set terminal cost
+    std::vector<double> W_e(DIFFERENTIAL_DRIVE_NX * DIFFERENTIAL_DRIVE_NX, 0.0);
+    for (int i = 0; i < DIFFERENTIAL_DRIVE_NX; ++i) {
+        W_e[i * DIFFERENTIAL_DRIVE_NX + i] = Q_diag[i];
+    }
+    ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, DIFFERENTIAL_DRIVE_N, "W", W_e.data());
+}
 
 AcadosSolver::~AcadosSolver() {
     if (capsule) {

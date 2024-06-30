@@ -6,7 +6,10 @@
 class AcadosSolver {
     public:
         AcadosSolver(const std::vector<double>& lbx, const std::vector<double>& ubx,
-                    const std::vector<double>& lbu, const std::vector<double>& ubu);
+                     const std::vector<double>& lbu, const std::vector<double>& ubu,
+                     const std::vector<double>& Q_diag,
+                     const std::vector<double>& R_diag,
+                     const std::vector<double>& R_rate_diag);
         ~AcadosSolver();
 
         int solve();
