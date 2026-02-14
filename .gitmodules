@@ -1,0 +1,3 @@
+[submodule "external/spline"]
+	path = external/spline
+	url = https://github.com/ttk592/spline.git
