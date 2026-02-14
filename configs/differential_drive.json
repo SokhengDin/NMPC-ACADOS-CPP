@@ -1,0 +1,15 @@
+{
+    "model_name": "differential_drive",
+    "x_init": [0.0, 0.0, 0.0],
+    "x_target": [3.0, 1.5, 1.57],
+    "lbx": [-10.0, -10.0, -3.14],
+    "ubx": [10.0, 10.0, 3.14],
+    "lbu": [-0.5, -0.8],
+    "ubu": [0.5, 0.8],
+    "Q_diag": [25.0, 10.0, 1.0],
+    "R_diag": [0.1, 0.01],
+    "R_rate_diag": [10.0, 20.0],
+    "dt": 0.05,
+    "distance_threshold": 0.03,
+    "max_iterations": 10000
+}

@@ -15,7 +15,13 @@ progress.marks
 
 # Ignore generated files
 plots/
+acados_generated/
+
+# Python generated files
+python/c_generated_code/
+python/__pycache__/
+python/*.pyc
+python/acados_ocp.json
 
 # Ignore temporary files and directories
-CMakeTmp/
 CMakeTmp/

@@ -1,5 +1,9 @@
 FROM ubuntu:22.04
 
+# Set timezone to avoid interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=UTC
+
 # Install required dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
@@ -12,7 +16,8 @@ RUN apt-get update && apt-get install -y \
     python3-dev \
     python3-matplotlib \
     python3-numpy \
-    python3-pip
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install  dependencies
 RUN pip3 install casadi matplotlib

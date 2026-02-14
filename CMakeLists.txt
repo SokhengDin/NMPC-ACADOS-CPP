@@ -4,117 +4,115 @@ project(acados_cpp VERSION 1.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-# Link file system library
-link_libraries(stdc++fs)
-
-# Find Python
-find_package(Python3 COMPONENTS Interpreter Development NumPy REQUIRED)
-include_directories(${Python3_INCLUDE_DIRS})
-
-# Find matplotlib
-execute_process(
-    COMMAND ${Python3_EXECUTABLE} -c "import matplotlib; print(matplotlib.__file__)"
-    OUTPUT_VARIABLE MATPLOTLIB_PATH
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-get_filename_component(MATPLOTLIB_PATH ${MATPLOTLIB_PATH} DIRECTORY)
-
-# Try to find backend_agg.h
-find_path(MATPLOTLIB_INCLUDE_DIR
-    NAMES backend_agg.h agg_backend.h
-    PATHS
-        ${MATPLOTLIB_PATH}
-        ${MATPLOTLIB_PATH}/backends
-        ${MATPLOTLIB_PATH}/backends/qt_compat
-        ${Python3_SITELIB}/matplotlib/backends
-        ${Python3_SITELIB}/matplotlib/backends/qt_compat
-    PATH_SUFFIXES matplotlib/backends
-)
-
-if(NOT MATPLOTLIB_INCLUDE_DIR)
-    message(WARNING "matplotlib backend header not found. Plotting functionality might be limited.")
-else()
-    message(STATUS "Found matplotlib backend header at: ${MATPLOTLIB_INCLUDE_DIR}")
-    include_directories(${MATPLOTLIB_INCLUDE_DIR})
-    include_directories(${MATPLOTLIB_PATH})
-    include_directories(${MATPLOTLIB_PATH}/core)
+if(NOT APPLE)
+    link_libraries(stdc++fs)
 endif()
 
-include_directories(${MATPLOTLIB_PATH})
-include_directories(${MATPLOTLIB_PATH}/core)
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
-# Set path
-set(ACADOS_INSTALL_DIR "/home/eroxii/ocp_ws/acados" CACHE PATH "Path to acados installation")
+execute_process(
+    COMMAND ${Python3_EXECUTABLE} -c "import sys; print(sys.prefix)"
+    OUTPUT_VARIABLE PYTHON_PREFIX
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
 
-# Add acados include directories
+execute_process(
+    COMMAND ${Python3_EXECUTABLE} -c "import sysconfig; print(sysconfig.get_config_var('INCLUDEPY'))"
+    OUTPUT_VARIABLE Python3_INCLUDE_DIR
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+execute_process(
+    COMMAND ${Python3_EXECUTABLE} -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR'))"
+    OUTPUT_VARIABLE Python3_LIBRARY_DIR
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+set(Python3_FIND_STRATEGY LOCATION)
+find_package(Python3 COMPONENTS Development REQUIRED)
+include_directories(${Python3_INCLUDE_DIRS})
+
+execute_process(
+    COMMAND ${Python3_EXECUTABLE} -c "import numpy; print(numpy.get_include())"
+    OUTPUT_VARIABLE NUMPY_INCLUDE_DIR
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+include_directories(${NUMPY_INCLUDE_DIR})
+
+message(STATUS "Python executable: ${Python3_EXECUTABLE}")
+message(STATUS "Python include: ${Python3_INCLUDE_DIRS}")
+message(STATUS "NumPy include: ${NUMPY_INCLUDE_DIR}")
+
+include_directories(${CMAKE_SOURCE_DIR}/external/matplotlib-cpp)
+include_directories(${CMAKE_SOURCE_DIR}/external/spline/src)
+
+if(DEFINED ENV{ACADOS_SOURCE_DIR})
+    set(ACADOS_INSTALL_DIR "$ENV{ACADOS_SOURCE_DIR}")
+else()
+    set(ACADOS_INSTALL_DIR "$ENV{HOME}/Desktop/Robotics/github/acados")
+endif()
+message(STATUS "Using ACADOS_INSTALL_DIR: ${ACADOS_INSTALL_DIR}")
+
 include_directories(${ACADOS_INSTALL_DIR}/include)
 include_directories(${ACADOS_INSTALL_DIR}/include/acados)
 include_directories(${ACADOS_INSTALL_DIR}/include/blasfeo/include)
 include_directories(${ACADOS_INSTALL_DIR}/include/hpipm/include)
 
-# Add the path to generated acados code
-set(ACADOS_GENERATED_DIR "${CMAKE_SOURCE_DIR}/acados_generated")
-include_directories(${ACADOS_GENERATED_DIR})
-include_directories(${ACADOS_GENERATED_DIR}/differential_drive_model)
-include_directories(${ACADOS_GENERATED_DIR}/differential_drive_cost)
-
-# Add the include directory
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
-file(COPY ${ACADOS_GENERATED_DIR}/libacados_ocp_solver_differential_drive.so
-     DESTINATION ${CMAKE_BINARY_DIR})
+if(APPLE)
+    set(LIB_EXT "dylib")
+else()
+    set(LIB_EXT "so")
+endif()
 
-add_executable(differential_drive_solver
-    src/main.cpp
-    src/acados_cpp_wrapper.cpp
-    ${ACADOS_GENERATED_DIR}/acados_solver_differential_drive.c
-    ${ACADOS_GENERATED_DIR}/differential_drive_model/differential_drive_expl_ode_fun.c
-    ${ACADOS_GENERATED_DIR}/differential_drive_model/differential_drive_expl_vde_forw.c
-    ${ACADOS_GENERATED_DIR}/differential_drive_model/differential_drive_expl_vde_adj.c
-    ${ACADOS_GENERATED_DIR}/differential_drive_cost/differential_drive_cost_y_0_fun.c
-    ${ACADOS_GENERATED_DIR}/differential_drive_cost/differential_drive_cost_y_0_fun_jac_ut_xt.c
-    ${ACADOS_GENERATED_DIR}/differential_drive_cost/differential_drive_cost_y_0_hess.c
-    ${ACADOS_GENERATED_DIR}/differential_drive_cost/differential_drive_cost_y_e_fun.c
-    ${ACADOS_GENERATED_DIR}/differential_drive_cost/differential_drive_cost_y_e_fun_jac_ut_xt.c
-    ${ACADOS_GENERATED_DIR}/differential_drive_cost/differential_drive_cost_y_e_hess.c
-    ${ACADOS_GENERATED_DIR}/differential_drive_cost/differential_drive_cost_y_fun.c
-    ${ACADOS_GENERATED_DIR}/differential_drive_cost/differential_drive_cost_y_fun_jac_ut_xt.c
-    ${ACADOS_GENERATED_DIR}/differential_drive_cost/differential_drive_cost_y_hess.c
+set(ACADOS_GENERATED_DIR "${CMAKE_SOURCE_DIR}/acados_generated")
+if(EXISTS ${ACADOS_GENERATED_DIR}/libacados_ocp_solver_differential_drive.${LIB_EXT})
+    file(COPY ${ACADOS_GENERATED_DIR}/libacados_ocp_solver_differential_drive.${LIB_EXT}
+         DESTINATION ${CMAKE_BINARY_DIR})
+endif()
+
+set(ACADOS_GENERATED_BICYCLE_DIR "${CMAKE_SOURCE_DIR}/acados_generated_bicycle")
+if(EXISTS ${ACADOS_GENERATED_BICYCLE_DIR}/libacados_ocp_solver_bicycle.${LIB_EXT})
+    file(COPY ${ACADOS_GENERATED_BICYCLE_DIR}/libacados_ocp_solver_bicycle.${LIB_EXT}
+         DESTINATION ${CMAKE_BINARY_DIR})
+endif()
+
+set(ACADOS_GENERATED_QUADROTOR_DIR "${CMAKE_SOURCE_DIR}/acados_generated_quadrotor")
+if(EXISTS ${ACADOS_GENERATED_QUADROTOR_DIR}/libacados_ocp_solver_quadrotor.${LIB_EXT})
+    file(COPY ${ACADOS_GENERATED_QUADROTOR_DIR}/libacados_ocp_solver_quadrotor.${LIB_EXT}
+         DESTINATION ${CMAKE_BINARY_DIR})
+endif()
+
+set(ACADOS_GENERATED_ROCKET_DIR "${CMAKE_SOURCE_DIR}/acados_generated_rocket")
+if(EXISTS ${ACADOS_GENERATED_ROCKET_DIR}/libacados_ocp_solver_rocket.${LIB_EXT})
+    file(COPY ${ACADOS_GENERATED_ROCKET_DIR}/libacados_ocp_solver_rocket.${LIB_EXT}
+         DESTINATION ${CMAKE_BINARY_DIR})
+endif()
+
+add_executable(mpc_controller
+    src/mpc_controller.cpp
+    src/acados_mpc_solver.cpp
 )
 
-target_include_directories(differential_drive_solver PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(mpc_controller PRIVATE ${CMAKE_SOURCE_DIR}/external)
 
-# Link against the acados libraries
-target_link_libraries(differential_drive_solver
-    ${ACADOS_INSTALL_DIR}/lib/libacados.so
-    ${ACADOS_INSTALL_DIR}/lib/libblasfeo.so
-    ${ACADOS_INSTALL_DIR}/lib/libhpipm.so
-    ${CMAKE_BINARY_DIR}/libacados_ocp_solver_differential_drive.so
+target_link_libraries(mpc_controller
+    ${ACADOS_INSTALL_DIR}/lib/libacados.${LIB_EXT}
+    ${ACADOS_INSTALL_DIR}/lib/libblasfeo.${LIB_EXT}
+    ${ACADOS_INSTALL_DIR}/lib/libhpipm.${LIB_EXT}
     ${Python3_LIBRARIES}
-    ${Python3_NumPy_LIBRARIES}
+    ${CMAKE_DL_LIBS}
 )
 
-# Add matplotlib-cpp
-target_include_directories(differential_drive_solver PRIVATE ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(differential_drive_solver 
-    ${Python3_LIBRARIES}
-    ${Python3_NumPy_LIBRARIES}
-)
-target_compile_definitions(differential_drive_solver PRIVATE
+target_compile_definitions(mpc_controller PRIVATE
     WITHOUT_NUMPY
     MPL_strcasecmp=strcasecmp
 )
 
-# Set RPATH for the executable
-set_target_properties(differential_drive_solver PROPERTIES
-    INSTALL_RPATH "${CMAKE_BINARY_DIR}:${ACADOS_INSTALL_DIR}/lib"
+get_filename_component(PYTHON_LIB_DIR ${Python3_LIBRARIES} DIRECTORY)
+set_target_properties(mpc_controller PROPERTIES
+    INSTALL_RPATH "${CMAKE_BINARY_DIR};${ACADOS_INSTALL_DIR}/lib;${PYTHON_LIB_DIR}"
     BUILD_WITH_INSTALL_RPATH TRUE
+    BUILD_RPATH "${CMAKE_BINARY_DIR};${ACADOS_INSTALL_DIR}/lib;${PYTHON_LIB_DIR}"
 )
-
-# Print debug information
-message(STATUS "Python3_INCLUDE_DIRS: ${Python3_INCLUDE_DIRS}")
-message(STATUS "Python3_LIBRARIES: ${Python3_LIBRARIES}")
-message(STATUS "Python3_NumPy_INCLUDE_DIRS: ${Python3_NumPy_INCLUDE_DIRS}")
-message(STATUS "Python3_NumPy_LIBRARIES: ${Python3_NumPy_LIBRARIES}")
-message(STATUS "MATPLOTLIB_PATH: ${MATPLOTLIB_PATH}")
-message(STATUS "MATPLOTLIB_INCLUDE_DIR: ${MATPLOTLIB_INCLUDE_DIR}")

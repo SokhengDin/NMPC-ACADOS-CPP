@@ -1,13 +1,19 @@
 # MPC using Acados
 
 ## Overview
-This project implements a Model Predictive Control (MPC) for robot using Acados in C++.
+This project implements a generic Model Predictive Control (MPC) framework using Acados. Define your robot model in Python, generate optimized C code, and run real-time MPC in C++ without recompilation.
 
 ## Dependencies
 - Acados
 - CMake
-- Eigen
+- Python 3 with CasADi, NumPy
 - Matplotlib C++ (for plotting)
+
+## Workflow
+1. Define robot model in Python (`python/your_model.py`)
+2. Generate Acados C code (`python generate_your_model.py`)
+3. Create JSON config (`configs/your_model.json`)
+4. Run generic MPC controller with your config
 
 ## Building the Project
 To build the project, follow these steps:
@@ -35,10 +41,131 @@ To build the project, follow these steps:
     ```
 
 ## Running the Solver
-After building the project, you can run the solver using the following command:
+
+1. Generate Acados code for your model:
 ```sh
-./build/differential_drive_solver
+cd python
+python generate_differential_drive.py
+python generate_bicycle.py
 ```
+
+2. Build the project:
+```sh
+mkdir build && cd build
+cmake ..
+make
+```
+
+3. Run MPC controller with model config:
+```sh
+cd build
+DYLD_LIBRARY_PATH=. ./mpc_controller ../configs/differential_drive.json
+DYLD_LIBRARY_PATH=. ./mpc_controller ../configs/bicycle.json
+```
+
+Plots will be saved to `plots/` directory with model name suffix.
+
+## Implemented Models
+
+### Bicycle Model
+
+The kinematic bicycle model is commonly used for car-like robots and autonomous vehicles. It captures the nonholonomic constraints of wheeled vehicles.
+
+![Bicycle Model Animation](animation_bicycle.gif)
+
+#### State Vector
+```math
+x = \begin{bmatrix} x \\ y \\ \theta \\ v \end{bmatrix}
+```
+
+where:
+- $x, y$ are the position coordinates
+- $\theta$ is the heading angle
+- $v$ is the linear velocity
+
+#### Control Input Vector
+```math
+u = \begin{bmatrix} a \\ \delta \end{bmatrix}
+```
+
+where:
+- $a$ is the acceleration
+- $\delta$ is the steering angle
+
+#### Dynamics
+```math
+\begin{align}
+\dot{x} &= v \cos(\theta) \\
+\dot{y} &= v \sin(\theta) \\
+\dot{\theta} &= \frac{v}{L} \tan(\delta) \\
+\dot{v} &= a
+\end{align}
+```
+
+where $L = 2.5$ m is the wheelbase (distance between front and rear axles).
+
+### Quadrotor Model
+
+The quadrotor model represents a 3D quadcopter with planar dynamics for trajectory tracking.
+
+![Quadrotor Model Animation](animation_quadrotor.gif)
+
+#### State Vector
+```math
+x = \begin{bmatrix} x \\ y \\ z \\ v_x \\ v_y \\ v_z \\ \phi \\ \theta \\ \psi \\ p \\ q \\ r \end{bmatrix}
+```
+
+where:
+- $x, y, z$ are the position coordinates
+- $v_x, v_y, v_z$ are the linear velocities
+- $\phi, \theta, \psi$ are the roll, pitch, and yaw angles (Euler angles)
+- $p, q, r$ are the body-frame angular velocities (roll rate, pitch rate, yaw rate)
+
+#### Control Input Vector
+```math
+u = \begin{bmatrix} F \\ \tau_\phi \\ \tau_\theta \\ \tau_\psi \end{bmatrix}
+```
+
+where:
+- $F$ is the total thrust force
+- $\tau_\phi, \tau_\theta, \tau_\psi$ are the torques around roll, pitch, and yaw axes
+
+#### Dynamics
+
+**Translational dynamics:**
+```math
+\begin{align}
+\dot{x} &= v_x \\
+\dot{y} &= v_y \\
+\dot{z} &= v_z \\
+\dot{v}_x &= \frac{F}{m}(\sin(\psi)\sin(\phi) + \cos(\psi)\sin(\theta)\cos(\phi)) \\
+\dot{v}_y &= \frac{F}{m}(-\cos(\psi)\sin(\phi) + \sin(\psi)\sin(\theta)\cos(\phi)) \\
+\dot{v}_z &= \frac{F}{m}\cos(\theta)\cos(\phi) - g
+\end{align}
+```
+
+**Euler angle kinematics:**
+```math
+\begin{align}
+\dot{\phi} &= p + \sin(\phi)\tan(\theta)q + \cos(\phi)\tan(\theta)r \\
+\dot{\theta} &= \cos(\phi)q - \sin(\phi)r \\
+\dot{\psi} &= \frac{\sin(\phi)}{\cos(\theta)}q + \frac{\cos(\phi)}{\cos(\theta)}r
+\end{align}
+```
+
+**Angular dynamics (with gyroscopic coupling):**
+```math
+\begin{align}
+\dot{p} &= \frac{\tau_\phi}{I_{xx}} + \frac{I_{yy} - I_{zz}}{I_{xx}}qr \\
+\dot{q} &= \frac{\tau_\theta}{I_{yy}} + \frac{I_{zz} - I_{xx}}{I_{yy}}pr \\
+\dot{r} &= \frac{\tau_\psi}{I_{zz}} + \frac{I_{xx} - I_{yy}}{I_{zz}}pq
+\end{align}
+```
+
+where:
+- $m = 1.0$ kg is the mass of the quadrotor
+- $g = 9.81$ m/s² is the gravitational acceleration
+- $I_{xx} = 0.01$ kg·m², $I_{yy} = 0.01$ kg·m², $I_{zz} = 0.02$ kg·m² are the moments of inertia
 
 ## Model Predictive Control (MPC) Cost Function
 
